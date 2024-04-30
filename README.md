@@ -1,33 +1,67 @@
-# `Turborepo` Vite starter
+# SonnetJS Router
 
-This is an official starter Turborepo.
+A simple and lightweight router for SonnetJS.
 
-## Using this example
+## Installation
 
-Run the following command:
-
-```sh
-npx create-turbo@latest -e with-vite
+```bash
+npm i @sonnetjs/router
 ```
 
-## What's inside?
+## Usage
 
-This Turborepo includes the following packages and apps:
+```typescript
+// src/router.ts
+import {
+  RouteObject,
+  createBrowserHistory,
+  createRouter,
+} from '@sonnetjs/router';
 
-### Apps and Packages
+import Home from './pages/Home';
+import About from './pages/About';
+import Contact from './pages/Contact';
 
-- `docs`: a vanilla [vite](https://vitejs.dev) ts app
-- `web`: another vanilla [vite](https://vitejs.dev) ts app
-- `@repo/ui`: a stub component & utility library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: shared `eslint` configurations
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+import RootComponent from './partials/Layout';
 
-Each package and app is 100% [TypeScript](https://www.typescriptlang.org/).
+const routes: RouteObject[] = [
+  {
+    rootComponent: RootComponent,
+    children: [
+      { path: '/', component: Home },
+      { path: '/about', component: About },
+      { path: '/contact', component: Contact },
+    ],
+  },
+];
 
-### Utilities
+const history = createBrowserHistory();
 
-This Turborepo has some additional tools already setup for you:
+export const router = createRouter({
+  routes,
+  history,
+});
+```
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+```typescript
+// src/main.ts
+import App from './App';
+import { router } from './router';
+
+import { createApp } from '@sonnetjs/core';
+
+const app = createApp();
+app.root(App);
+app.use(router);
+app.lazy();
+app.mount('#app');
+app.initialized();
+```
+
+## License
+
+It is licensed under the MIT license.
+
+## Packages
+
+- [@sonnetjs/router](https://www.npmjs.com/package/@sonnetjs/router)
