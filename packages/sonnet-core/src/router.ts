@@ -26,8 +26,8 @@ export type BaseRouteObject = {
   path?: string;
   sensitive?: boolean;
   params?: Record<string, string>;
-  component?: () => SonnetComponent;
-  rootComponent?: () => SonnetComponent;
+  component?: () => Promise<SonnetComponent> | SonnetComponent;
+  rootComponent?: () => Promise<SonnetComponent> | SonnetComponent;
 };
 
 export type IndexedRoutesObject = Record<
@@ -78,7 +78,7 @@ export function createRouter(options: RouteOptions): Router {
   function install(app: SonnetApp) {
     if (state.initialized) return;
     app.lazy(false);
-    unsubscribe = subscribe(() => {
+    unsubscribe = subscribe(async () => {
       if (!app) return;
       const matches = state.matches;
 
@@ -90,27 +90,29 @@ export function createRouter(options: RouteOptions): Router {
         .find((match) => match.rootComponent)?.rootComponent;
 
       if (lastMatch.component) {
+        const matchingComponent = await lastMatch.component();
+
         if (app.component) {
           if (rootComponent) {
-            const initRoot = rootComponent()
-              .children(lastMatch.component().get())
+            const initRoot = (await rootComponent())
+              .children(matchingComponent.get())
               .get();
             app.root(app.component, {
               _children: initRoot,
             });
           } else {
             app.root(app.component, {
-              _children: lastMatch.component().get(),
+              _children: matchingComponent.get(),
             });
           }
         } else {
           if (rootComponent) {
-            const initRoot = rootComponent;
-            app.root(initRoot, {
-              _children: lastMatch.component().get(),
+            const initRoot = await rootComponent();
+            app.root(() => initRoot, {
+              _children: matchingComponent.get(),
             });
           } else {
-            app.root(lastMatch.component);
+            app.root(() => matchingComponent);
           }
         }
       }

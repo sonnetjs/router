@@ -4,19 +4,22 @@ import {
   createRouter,
 } from '@sonnetjs/router';
 
-import Home from './pages/Home';
-import About from './pages/About';
-import Contact from './pages/Contact';
-
-import RootComponent from './partials/Layout';
-
 const routes: RouteObject[] = [
   {
-    rootComponent: RootComponent,
+    rootComponent: async () => (await import('./partials/Layout')).default(),
     children: [
-      { path: '/', component: Home },
-      { path: '/about', component: About },
-      { path: '/contact', component: Contact },
+      {
+        path: '/',
+        component: async () => (await import('./pages/Home')).default(),
+      },
+      {
+        path: '/about',
+        component: async () => (await import('./pages/About')).default(),
+      },
+      {
+        path: '/contact',
+        component: async () => (await import('./pages/Contact')).default(),
+      },
     ],
   },
 ];
