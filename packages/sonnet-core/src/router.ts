@@ -1,12 +1,13 @@
 import { SonnetApp, SonnetComponent } from '@sonnetjs/core';
 import { Action, History, Location, To } from './history';
 import { matcher, normalizedRoutes } from './parser';
-import { preventLink } from './dom';
+import { LinkEvent } from './dom';
 
 type RouteOptions = {
   routes: RouteObject[];
   history: History;
   window?: Window;
+  mountedId?: string;
 };
 
 type Router = {
@@ -75,9 +76,13 @@ export function createRouter(options: RouteOptions): Router {
 
   let unsubscribe: () => void;
 
+  let isAppRoot = false;
+  let isFirstMounted = false;
+
   function install(app: SonnetApp) {
     if (state.initialized) return;
     app.lazy(false);
+
     unsubscribe = subscribe(async () => {
       if (!app) return;
       const matches = state.matches;
@@ -92,20 +97,42 @@ export function createRouter(options: RouteOptions): Router {
       if (lastMatch.component) {
         const matchingComponent = await lastMatch.component();
 
-        if (app.component) {
-          if (rootComponent) {
-            const initRoot = (await rootComponent())
-              .children(matchingComponent.get())
-              .get();
-            app.root(app.component, {
-              _children: initRoot,
-            });
+        if (app.component && !isFirstMounted) {
+          isAppRoot = true;
+        }
+        if (!isAppRoot && options.mountedId) {
+          console.warn(
+            "Mounted id doesn't have any impact because the app root is not set.",
+            'set app.root(App) in your app component.',
+          );
+        }
+
+        if (app.component && isAppRoot) {
+          if (options.mountedId && isFirstMounted) {
+            if (rootComponent) {
+              const initRoot = await rootComponent();
+              app.root(() => initRoot, {
+                _children: matchingComponent.get(),
+              });
+            } else {
+              app.root(() => matchingComponent);
+            }
           } else {
-            app.root(app.component, {
-              _children: matchingComponent.get(),
-            });
+            if (rootComponent) {
+              const initRoot = (await rootComponent())
+                .children(matchingComponent.get())
+                .get();
+              app.root(app.component, {
+                _children: initRoot,
+              });
+            } else {
+              app.root(app.component, {
+                _children: matchingComponent.get(),
+              });
+            }
           }
         } else {
+          isAppRoot = false;
           if (rootComponent) {
             const initRoot = await rootComponent();
             app.root(() => initRoot, {
@@ -116,11 +143,26 @@ export function createRouter(options: RouteOptions): Router {
           }
         }
       }
-      app.mount(app.mountedId);
+      if (options.mountedId && isFirstMounted && isAppRoot) {
+        app.unmount();
+        app.mount(options.mountedId);
+      } else {
+        isFirstMounted && app.unmount();
+        app.mount(app.mountedId);
+      }
     });
 
+    const linkEvent = new LinkEvent();
+
     app.on('mount', () => {
-      preventLink(navigate, routerWindow);
+      linkEvent.init(navigate);
+      linkEvent.addListener();
+
+      isFirstMounted = true;
+    });
+
+    app.on('unmount', () => {
+      linkEvent.removeListener();
     });
 
     navigate(options.history.location.pathname);

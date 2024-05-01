@@ -9,7 +9,9 @@ class App extends SonnetComponent {
   public get() {
     return /*html */ `
     ${header()}
-    ${this._children}
+    <div id="app-1">
+      ${this._children}
+    </div
     `;
   }
 }

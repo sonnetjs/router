@@ -29,4 +29,5 @@ const history = createBrowserHistory();
 export const router = createRouter({
   routes,
   history,
+  mountedId: '#app-1',
 });

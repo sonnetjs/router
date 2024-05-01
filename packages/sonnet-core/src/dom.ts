@@ -1,19 +1,33 @@
-export function preventLink(
-  navigate: (href: string) => void,
-  routerWindow?: Window,
-) {
-  if (!routerWindow) {
-    throw new Error('Window is undefined');
+import { Action, To } from './history';
+
+export class LinkEvent {
+  a: NodeListOf<HTMLAnchorElement> | null;
+  static navigate: (to: number | To, action?: Action) => void;
+
+  constructor() {
+    this.a = null;
   }
-  const a = routerWindow.document.querySelectorAll('a[data-link="prevent"]');
 
-  a.forEach((link) => {
-    link.addEventListener('click', (event) => {
-      event.preventDefault();
+  init(navigate: (to: number | To, action?: Action) => void) {
+    this.a = document.querySelectorAll('a');
+    LinkEvent.navigate = navigate;
+  }
 
-      const href = link.getAttribute('href');
+  handleClick(event: MouseEvent) {
+    event.preventDefault();
+    const href = (event.target as HTMLAnchorElement).href;
+    LinkEvent.navigate(href);
+  }
 
-      navigate(href as string);
+  public addListener() {
+    this.a?.forEach((link) => {
+      link.addEventListener('click', this.handleClick);
     });
-  });
+  }
+
+  public removeListener() {
+    this.a?.forEach((link) => {
+      link.addEventListener('click', this.handleClick);
+    });
+  }
 }
