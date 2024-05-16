@@ -1,6 +1,6 @@
 {
   "name": "@sonnetjs/router",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "files": [
     "dist"
   ],
@@ -27,7 +27,7 @@
     "typescript": "^5.3.3"
   },
   "peerDependencies": {
-    "@sonnetjs/core": "0.0.21"
+    "@sonnetjs/core": "^0.0.28"
   },
   "dependencies": {
     "path-to-regexp": "^6.2.0"
